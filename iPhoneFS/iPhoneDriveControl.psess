@@ -1,0 +1,112 @@
+<VSPerformanceSession Version="1.00">
+  <Options>
+    <Solution>iPhoneExplorer.sln</Solution>
+    <CollectionMethod>Instrumentation</CollectionMethod>
+    <AllocationMethod>None</AllocationMethod>
+    <AddReport>true</AddReport>
+    <UniqueReport>Timestamp</UniqueReport>
+    <SamplingMethod>Cycles</SamplingMethod>
+    <CycleCount>10000000</CycleCount>
+    <PageFaultCount>10</PageFaultCount>
+    <SysCallCount>10</SysCallCount>
+    <SamplingCounter PlatformID="00000000" CounterID="0000000000000000" ReloadValue="00000000000f4240" />
+    <RelocateBinaries>false</RelocateBinaries>
+    <HardwareCounters EnableHWCounters="false" />
+    <EtwSettings />
+  </Options>
+  <PreinstrumentEvent>
+    <InstrEventExclude>false</InstrEventExclude>
+  </PreinstrumentEvent>
+  <PostinstrumentEvent>
+    <InstrEventExclude>false</InstrEventExclude>
+  </PostinstrumentEvent>
+  <Binaries>
+    <ProjBinary>
+      <Path>iPhoneDriveControl\obj\Release\iPhoneDriveControl.exe</Path>
+      <ArgumentTimestamp>01/01/0001 00:00:00</ArgumentTimestamp>
+      <Instrument>true</Instrument>
+      <LaunchProject>true</LaunchProject>
+      <LaunchMethod>Executable</LaunchMethod>
+      <ExecutablePath>iPhoneDriveControl\bin\Release\iPhoneDriveControl.exe</ExecutablePath>
+      <StartupDirectory>iPhoneDriveControl\bin\Release\</StartupDirectory>
+      <Arguments />
+      <NetAppHost>IIS</NetAppHost>
+      <PreinstrumentEvent>
+        <InstrEventExclude>false</InstrEventExclude>
+      </PreinstrumentEvent>
+      <PostinstrumentEvent>
+        <InstrEventExclude>false</InstrEventExclude>
+      </PostinstrumentEvent>
+      <ProjRef>{C1E011E0-BEE8-4C45-9F77-742EB9CBE4BF}|iPhoneDriveControl\iPhoneDriveControl.csproj</ProjRef>
+      <ProjPath>iPhoneDriveControl\iPhoneDriveControl.csproj</ProjPath>
+      <ProjName>iPhoneDriveControl</ProjName>
+    </ProjBinary>
+    <ProjBinary>
+      <Path>FileSystemInterface\obj\Release\Interface.dll</Path>
+      <ArgumentTimestamp>01/01/0001 00:00:00</ArgumentTimestamp>
+      <Instrument>true</Instrument>
+      <LaunchProject>true</LaunchProject>
+      <LaunchMethod>Executable</LaunchMethod>
+      <StartupDirectory>FileSystemInterface\bin\Release\</StartupDirectory>
+      <Arguments />
+      <NetAppHost>IIS</NetAppHost>
+      <PreinstrumentEvent>
+        <InstrEventExclude>false</InstrEventExclude>
+      </PreinstrumentEvent>
+      <PostinstrumentEvent>
+        <InstrEventExclude>false</InstrEventExclude>
+      </PostinstrumentEvent>
+      <ProjRef>{EC64515A-BB74-4A3F-AAA7-0AC363E1C0BD}|FileSystemInterface\FileSystemInterface.csproj</ProjRef>
+      <ProjPath>FileSystemInterface\FileSystemInterface.csproj</ProjPath>
+      <ProjName>FileSystemInterface</ProjName>
+    </ProjBinary>
+    <ProjBinary>
+      <Path>iPhoneDriveFilesystem\obj\Release\iPhoneFS.dll</Path>
+      <ArgumentTimestamp>01/01/0001 00:00:00</ArgumentTimestamp>
+      <Instrument>true</Instrument>
+      <LaunchProject>true</LaunchProject>
+      <LaunchMethod>Executable</LaunchMethod>
+      <StartupDirectory>iPhoneDriveFilesystem\bin\Release\</StartupDirectory>
+      <Arguments />
+      <NetAppHost>IIS</NetAppHost>
+      <PreinstrumentEvent>
+        <InstrEventExclude>false</InstrEventExclude>
+      </PreinstrumentEvent>
+      <PostinstrumentEvent>
+        <InstrEventExclude>false</InstrEventExclude>
+      </PostinstrumentEvent>
+      <ProjRef>{5FD50E5E-1DE2-4B5D-8E5C-446D9D5E163E}|iPhoneDriveFilesystem\iPhoneDriveFilesystem.csproj</ProjRef>
+      <ProjPath>iPhoneDriveFilesystem\iPhoneDriveFilesystem.csproj</ProjPath>
+      <ProjName>iPhoneDriveFilesystem</ProjName>
+    </ProjBinary>
+    <ProjBinary>
+      <Path>..\ManzanaLocal\obj\Release\ManzanaLocal.dll</Path>
+      <ArgumentTimestamp>01/01/0001 00:00:00</ArgumentTimestamp>
+      <Instrument>true</Instrument>
+      <LaunchProject>true</LaunchProject>
+      <LaunchMethod>Executable</LaunchMethod>
+      <StartupDirectory>..\ManzanaLocal\bin\Release\</StartupDirectory>
+      <Arguments />
+      <NetAppHost>IIS</NetAppHost>
+      <PreinstrumentEvent>
+        <InstrEventExclude>false</InstrEventExclude>
+      </PreinstrumentEvent>
+      <PostinstrumentEvent>
+        <InstrEventExclude>false</InstrEventExclude>
+      </PostinstrumentEvent>
+      <ProjRef>{D51A65E2-60B2-41A5-84F0-1A288B735BD5}|..\ManzanaLocal\ManzanaLocal.csproj</ProjRef>
+      <ProjPath>..\ManzanaLocal\ManzanaLocal.csproj</ProjPath>
+      <ProjName>ManzanaLocal</ProjName>
+    </ProjBinary>
+  </Binaries>
+  <Reports>
+    <Report>
+      <Path>iPhoneDriveControl070827.vsp</Path>
+    </Report>
+  </Reports>
+  <Launches>
+    <ProjBinary>
+      <Path>:PB:{C1E011E0-BEE8-4C45-9F77-742EB9CBE4BF}|iPhoneDriveControl\iPhoneDriveControl.csproj</Path>
+    </ProjBinary>
+  </Launches>
+</VSPerformanceSession>

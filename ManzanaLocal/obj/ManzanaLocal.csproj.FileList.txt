@@ -1,0 +1,7 @@
+obj\Debug\ResolveAssemblyReference.cache
+obj\Debug\ManzanaLocal.Tester.resources
+obj\Debug\ManzanaLocal.csproj.GenerateResource.Cache
+bin\Debug\ManzanaLocal.dll
+bin\Debug\ManzanaLocal.pdb
+obj\Debug\ManzanaLocal.dll
+obj\Debug\ManzanaLocal.pdb
