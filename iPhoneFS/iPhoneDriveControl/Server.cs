@@ -1,4 +1,10 @@
-﻿//#define SERVICE
+﻿//Define this constant to change the project to a Windows Server application, but do not forget to register 
+//the service with installutil 
+
+//#define SERVICE
+
+//Define this constant to test without having a iPhone
+//#define Test_without_iPhone
 
 using System;
 using System.Collections;
@@ -13,7 +19,7 @@ using Manzana;
 
 using NeoGeo.Library.SMB;
 using NeoGeo.Library.SMB.Provider;
-using NeoGeo.Library.SMB.Utilities;
+
 
 #if(!SERVICE)
 using System.Drawing;
@@ -148,34 +154,39 @@ namespace Suchwerk
 
         private MyTextWriterTraceListener LogFileListner;
         private delegate void SetTextCallback(string Text);
-        
+
         public Form1()
         {
             InitializeComponent();
 
-            //Wird für VS2005 benötigt, dort wird die Thread-Safeheit überprüft
+            //Is necessary for VS2005, as it checks for Thread-safty
             TextBox.CheckForIllegalCrossThreadCalls = false;
 
             string DataPath = System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-			if (!DataPath.EndsWith("\\"))
-				DataPath += "\\";
-			
+            if (!DataPath.EndsWith("\\"))
+                DataPath += "\\";
+
             System.IO.File.Delete(DataPath + "log.txt");
             LogFileListner = new MyTextWriterTraceListener(DataPath + "log.txt", this);
             Trace.Listeners.Add(LogFileListner);
-            
+
             Trace.AutoFlush = true;
             Debug.AutoFlush = true;
 
             this.Show();
             Application.DoEvents();
 
+#if (!Test_without_iPhone)
             StartServer();
+#else
+            startCIFSServer();
+#endif
+
         }
 
         public void SetText(string Text)
         {
-            // Sollte den Eintrag, ThreadSave machen, funktioniert aber nicht, deshalb auskommentiert
+            // Should it make ThreadSave, but is not working
             //	if (this.TraceTextBox.InvokeRequired)
             //	{
             //		SetTextCallback call = new SetTextCallback(SetText);
@@ -192,7 +203,7 @@ namespace Suchwerk
 
 
         /// <summary>
-        /// Die verwendeten Ressourcen bereinigen.
+        /// Free used resources
         /// </summary>
         protected override void Dispose(bool disposing)
         {
@@ -324,6 +335,9 @@ namespace Suchwerk
 #endif
         static bool ensureDllExists(string filename)
         {
+#if (Test_without_iPhone)
+            return true;
+#endif
             if (File.Exists(filename))
             {
                 return true;
@@ -360,61 +374,46 @@ namespace Suchwerk
                 return false;
             }
         }
+        
         SMB CIFS = null;
+
         iPhone phone;
         string drive;
-        //Eigentliche Funktionalität des Programms !
+        
+        //That is the main part of the program
         private void startCIFSServer()
         {
-            // Test of Suchwerk schon läuft
+            // Check if the server is already running
             if (RunAlready())
             {
-                Trace.WriteLine("Fatal->Program läuft schon, diese Instanz wird beendet.");
-                throw new ApplicationException("Program kann nicht zwei mal gestartet werden.");
+                Trace.WriteLine("Fatal->The server is already running, this instance is beeing stopped.");
+                throw new ApplicationException("Server must only run in one instance.");
             }
 
             const int SMBNameLength = 15;
-            // SMB Server starten
+            // Start SMB server
             try
             {
-                //Servernamen von Suchwerk erstellen
                 string HostName = System.Windows.Forms.SystemInformation.ComputerName.ToUpper();
 
                 if (HostName.Length > SMBNameLength)
                     HostName = HostName.Substring(0, SMBNameLength);
 
-                //string ServerName = "%X-SW";		// Vorschrift zum Bauen des ServerNamens, %X wird durch Rechnernamen ersetzt
                 string ServerName = "iPhoneDrive";	// oder fester Name
-                string DomainController = string.Empty; //  "Master"; // Name es Domaincontrollers der zur Validierung von User-Anfragen verwendet wird. 
-
-                if (ServerName.IndexOf("%X") == -1)
-                {
-                    if (ServerName.Length > SMBNameLength)
-                        ServerName = ServerName.Substring(0, SMBNameLength);
-                }
-                else
-                {	// We have someting to replace
-                    int copy = 15 - (ServerName.Length - 2); // 14 ist maximallänge - anhang - length("%x")
-                    if (HostName.Length <= copy)
-                        ServerName = ServerName.Replace("%X", HostName);
-                    else
-                        ServerName = ServerName.Replace("%X", HostName.Substring(0, copy));
-                }
+                string DomainController = string.Empty; //  Name of the domain controller, is used for validating users, set it null to accept everybody
+                
                 CIFS = new SMB();
-                FileSystemProviderCollection fspc = new FileSystemProviderCollection();
-                FileSystemProvider fsp = new lokkju.iPx.iPhoneDrive.iPhoneFS();
-                fspc.Add(new lokkju.iPx.iPhoneDrive.iPhoneFS());
-                CIFS.SetFileSystems(fspc);
+
                 CIFS.Start(
                     ServerName,
                     (ushort)16384,
-                    0,
-                    5, // Number of concurrent queries
+                    NetFlag.Announce | NetFlag.RemoteAccess | NetFlag.ListenAllNetworkCards,
+                    5, // Anzahl der gleichzeitigen Anfragen
                     DomainController);
             }
             catch (Exception ex)
             {
-                throw new ApplicationException("CIFS server could not be established.", ex);
+                throw new ApplicationException("CIFS server could not be started.", ex);
             }
         }
         public void StartServer()
@@ -443,7 +442,7 @@ namespace Suchwerk
         {
             drive = iPhoneDriveControl.NetworkDriveManagement.NextDrive();
             Trace.WriteLine("Found drive '" + drive + "', mapping it...");
-            int ret = iPhoneDriveControl.NetworkDriveManagement.MapDrive(drive, @"\\iphonedrive\iPhoneFS");
+            int ret = iPhoneDriveControl.NetworkDriveManagement.MapDrive(drive, @"\\iphonedrive\phone");
             Trace.WriteLine("Ok,'" + drive + "' is pointing at your iPhone!");
             
         }

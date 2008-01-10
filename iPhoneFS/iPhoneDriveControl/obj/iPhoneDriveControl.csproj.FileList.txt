@@ -19,8 +19,6 @@ obj\Debug\Suchwerk.SuchwerkService.resources
 obj\Debug\iPhoneDriveControl.csproj.GenerateResource.Cache
 obj\Debug\iPhoneDriveControl.exe
 obj\Debug\iPhoneDriveControl.pdb
-bin\Debug\Interface.dll
-bin\Debug\Interface.pdb
 bin\Release\Interface.dll
 bin\Release\iPhoneFS.dll
 bin\Release\iPhoneFS.pdb

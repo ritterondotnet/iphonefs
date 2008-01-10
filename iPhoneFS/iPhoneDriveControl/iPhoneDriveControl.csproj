@@ -28,7 +28,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NeoGeo.Library.SMB, Version=1.0.2913.30474, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="NeoGeo.Library.SMB, Version=1.0.2886.22457, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>NonFree\NeoGeo.Library.SMB.dll</HintPath>
     </Reference>
@@ -37,7 +37,6 @@
       <HintPath>NonFree\NeoGeo.Library.SMB.Provider.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.configuration" />
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
@@ -86,18 +85,12 @@
     <Content Include="MainIcon.ico" />
     <Content Include="NonFree\MicroKernel.dll" />
     <Content Include="NonFree\NamedPipe.dll" />
-    <Content Include="NonFree\NeoGeo.Library.SMB.dll" />
-    <Content Include="NonFree\NeoGeo.Library.SMB.Provider.dll" />
     <Content Include="NonFree\PortalSMB.dll" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ManzanaLocal\ManzanaLocal.csproj">
       <Project>{D51A65E2-60B2-41A5-84F0-1A288B735BD5}</Project>
       <Name>ManzanaLocal</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\FileSystemInterface\FileSystemInterface.csproj">
-      <Project>{EC64515A-BB74-4A3F-AAA7-0AC363E1C0BD}</Project>
-      <Name>FileSystemInterface</Name>
     </ProjectReference>
     <ProjectReference Include="..\iPhoneDriveFilesystem\iPhoneDriveFilesystem.csproj">
       <Project>{5FD50E5E-1DE2-4B5D-8E5C-446D9D5E163E}</Project>

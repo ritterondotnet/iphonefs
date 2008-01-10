@@ -3,11 +3,15 @@ using System.IO;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
-//using Microsoft.Win32;
+using System.Configuration.Provider;
+using System.Collections.Specialized;
+
 using NeoGeo.Library.SMB.Provider;
+
 using Manzana;
 namespace lokkju.iPx.iPhoneDrive
 {
+
     /// <summary>
     /// Extension of the basis class FileContext
     /// </summary>
@@ -22,10 +26,9 @@ namespace lokkju.iPx.iPhoneDrive
         }
     }
 
-    public class iPhoneFS : NeoGeo.Library.SMB.Provider.FileSystemProvider
+    public class iPhoneFS : FileSystemProvider 
     {
         private iPhone phone;
-        private string fstype = "iphone";
         public iPhone Phone
         {
             get
@@ -33,38 +36,74 @@ namespace lokkju.iPx.iPhoneDrive
                 return phone;
             }
         }
-        public override string Name
-        {
-            get
-            {
-                return "iPhoneFS";
-            }
-        }
-        public string ShareName
-        {
-            get
-            {
-                return "iphonedrive";
-            }
-        }
+
+        private string root = "/";
+
+        private string _FileSystemProviderType;
+
         public override string FileSystemProviderType
         {
-            get
-            {
-                return fstype;
-            }
-            set
-            {
-                fstype = value;
-            }
+            get { return _FileSystemProviderType; }
+            set { _FileSystemProviderType = value; }
         }
-        private static string root = "/";
+
         /// <summary>
         /// The default constructor, in this case very simple, just set the path of the directory to share
         /// </summary>
         public iPhoneFS()
         {
             phone = new iPhone();
+        }
+
+        /// <summary>
+        /// Used in initialize the filesystem, you can add implementation specific setup data
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="config"></param>
+        public override void Initialize(string name, NameValueCollection config)
+        {
+            // Verify that config isn't null
+            if (config == null)
+                throw new ArgumentNullException("config");
+
+            // Assign the  provider a default name if it doesn't have one
+            if (String.IsNullOrEmpty(name))
+                name = "iPhoneFSProvider";
+
+            // Add a default "description" attribute to config if the
+            // attribute doesn't exist or is empty
+            if (string.IsNullOrEmpty(config["description"]))
+            {
+                config.Remove("description");
+                config.Add("description", "iPhoneFS provider");
+            }
+
+            // Call the  base class's Initialize method
+            base.Initialize(name, config);
+
+            // Initialize _FileSystemProviderType
+            _FileSystemProviderType = config["filesystemprovidertype"];
+
+            if (string.IsNullOrEmpty(_FileSystemProviderType))
+                _FileSystemProviderType = this.GetType().ToString();
+
+            config.Remove("filesystemprovidertype");
+
+            //Initialize _mappedPath;
+            string MappedPath = config["mappedpath"];
+            if (String.IsNullOrEmpty(MappedPath))
+                throw new ProviderException("Empty or missing mappedpath");
+            root = MappedPath;
+          
+            config.Remove("mappedpath");
+
+            // Throw an exception if unrecognized attributes remain
+            if (config.Count > 0)
+            {
+                string attr = config.GetKey(0);
+                if (!String.IsNullOrEmpty(attr))
+                    throw new ProviderException("Unrecognized attribute: " + attr);
+            }
         }
 
         //Implements the search for listings by means of identification FindFirst and FindNext
@@ -77,38 +116,20 @@ namespace lokkju.iPx.iPhoneDrive
             if (!HE.IsDirectory)
             {
                 Debug.WriteLine("Warning->Handle is not a directory, can not get a listing");
-                return NT_STATUS.INVALID_HANDLE;						// ERROR_INVALID_HANDLE
+                return NT_STATUS.INVALID_HANDLE;						
             }
 
             if (!phone.Exists(root + HE.Name) || !phone.IsDirectory(root + HE.Name))
-                return NT_STATUS.OBJECT_PATH_NOT_FOUND;   // Directroy not found, sollte nie passieren
+                return NT_STATUS.OBJECT_PATH_NOT_FOUND;   // Directroy not found, should never happen
 
-            if (HE.Items == null)
-                HE.Items = (FileContext.DirContextList<DirectoryContext>)new List<DirectoryContext>();
-            else
-            {
-                Debug.WriteLine("Warning->Listing was already filled, we should access the cache.");
-                HE.Items.Clear();   // Should never occur
-            }
-            DateTime dd = new DateTime(2007, 1, 1);
-            DirectoryContext r = new DirectoryContext(".", FileAttributes.Directory);
-            r.CreationTime = dd;
-            r.FileSize = 0;
-            r.LastAccessTime = dd;
-            r.LastWriteTime = dd;
-            DirectoryContext rr = new DirectoryContext("..", FileAttributes.Directory);
-            rr.CreationTime = dd;
-            rr.FileSize = 0;
-            rr.LastAccessTime = dd;
-            rr.LastWriteTime = dd;
-            
-            HE.Items.Add(r);
-            HE.Items.Add(rr);
+            HE.Items.Add(new DirectoryContext(".", FileAttributes.Directory));
+            HE.Items.Add(new DirectoryContext("..", FileAttributes.Directory));
 
             DirectoryContext Item = null;
+
             foreach (string DirName in phone.GetDirectories(root + HE.Name))
             {
-                error = GetAttributes(UserContext, root + HE.Name + DirName, out Item); //, SearchFlag.Dir);
+                error = GetAttributes(UserContext, root + HE.Name + DirName, out Item); 
                 if (error != 0)
                     Trace.WriteLine("Warning->Error: '" + error + "' during listing directories: " + HE.Name + DirName);
                 HE.Items.Add(Item);
@@ -116,14 +137,16 @@ namespace lokkju.iPx.iPhoneDrive
 
             foreach (string FileName in phone.GetFiles(root + HE.Name))
             {
-                error = GetAttributes(UserContext,root + HE.Name + FileName, out Item); //, SearchFlag.File);
+                error = GetAttributes(UserContext,root + HE.Name + FileName, out Item); 
                 if (error != 0)
                     Trace.WriteLine("Warning->Error: '" + error + "' during listing files: " + FileName);
                 else
                     HE.Items.Add(Item);
             }
+
             return NT_STATUS.OK;
         }
+
         public override NT_STATUS DeleteDirectory(UserContext UserContext, string path)
         {
             if (path == "")
@@ -153,6 +176,7 @@ namespace lokkju.iPx.iPhoneDrive
             }
             return NT_STATUS.OK;
         }
+
         public override NT_STATUS CreateDirectory(UserContext UserContext, string Path, FileAttributes Attributes)
         {
             if (Path.IndexOf("\\") == -1)
@@ -170,12 +194,13 @@ namespace lokkju.iPx.iPhoneDrive
             //}
             return NT_STATUS.OK;
         }
+
         public override NT_STATUS FSInfo(UserContext UserContext, out FileSystemAttributes data)
         {
             // Should be implemented very fast, as this method is called quite often
             // Try to implement is without any I/O or cache the I/O results. 
 
-            base.FSInfo(UserContext,out data);
+            base.FSInfo(UserContext, out data);
 
             data.FSName = "iPhoneFS";
 
@@ -188,6 +213,7 @@ namespace lokkju.iPx.iPhoneDrive
             data.TotalBytes = di.FileSystemTotalBytes;
             return NT_STATUS.OK;
         }
+
         public override NT_STATUS DeviceIO(UserContext UserContext, FileContext FileObject, int Command, bool IsFsctl, ref byte[] Input, ref byte[] Output, ref int ValidOutputLength)
         {
             // We implement some of the usaual command on our own
@@ -205,6 +231,7 @@ namespace lokkju.iPx.iPhoneDrive
             }
             //return NT_STATUS.NOT_IMPLEMENTED;
         }
+
         public override NT_STATUS Close(FileContext FileObject, DateTime LastWriteTime)
         {
             // If you use a write cache, be sure to call flush or any similar method to write the data through. 
@@ -229,6 +256,7 @@ namespace lokkju.iPx.iPhoneDrive
             */
             return NT_STATUS.OK;
         }
+
         public override NT_STATUS Close(FileContext FileObject)
         {
             MyFileContext hinfo = (MyFileContext)FileObject;
@@ -238,91 +266,18 @@ namespace lokkju.iPx.iPhoneDrive
 
             return NT_STATUS.OK;
         }
+
         public override NT_STATUS GetService(out string Service, out string NativeFileSystem, out string Comment)
         {
             base.GetService(out Service, out NativeFileSystem, out Comment);
+
             //FIXME: add definitions for NativeFileSystem and Service
             //Service = "iPhoneDrive";
             NativeFileSystem = "iPhoneFS";
             Comment = "iPhone Drive Mountable Filesystem";
             return NT_STATUS.OK;
         }
-        public NT_STATUS Create(UserContext UserContext, string Name, SearchFlag Flags, FileMode Mode, FileAccess Access, FileShare Share, out FileContext FileObject)
-        {
-            FileObject = null;
 
-            string PathName = root + Name;
-
-            try
-            {
-                switch (Mode)
-                {
-                    case FileMode.Open:			// Both work only if the file exists
-                    case FileMode.Truncate:
-                        switch (Flags)
-                        {
-                            case SearchFlag.FileAndDir:
-                                if (phone.Exists(PathName))
-                                {
-                                    if (!phone.IsDirectory(PathName))
-                                    {
-                                        //FIXME: Implement FileMode and FileShare
-                                        FileObject = new MyFileContext(Name, false, iPhoneFile.Open(phone, PathName, Access));
-                                        return NT_STATUS.OK;
-                                    }
-                                    else
-                                    {
-                                        FileObject = new MyFileContext(Name, true, null);
-                                        return NT_STATUS.OK;
-                                    }
-                                }
-                                return NT_STATUS.NO_SUCH_FILE;
-                            case SearchFlag.File:
-                                if (phone.Exists(PathName) && !phone.IsDirectory(PathName))
-                                {
-                                    //FIXME: Implement FileMode and FileShare
-                                    FileObject = new MyFileContext(Name, false, iPhoneFile.Open(phone, PathName, Access));
-                                    return NT_STATUS.OK;
-                                }
-                                return NT_STATUS.NO_SUCH_FILE; ;
-                            case SearchFlag.Dir:
-                                if (phone.Exists(PathName) && phone.IsDirectory(PathName))
-                                {
-                                    FileObject = new MyFileContext(Name, true, null);
-                                    return NT_STATUS.OK;
-                                }
-                                return NT_STATUS.OBJECT_PATH_NOT_FOUND;
-                            default:
-                                return NT_STATUS.INVALID_PARAMETER;
-                        }
-
-                    case FileMode.CreateNew:
-                        // Works only if the file does not exists
-                        if (phone.Exists(PathName))
-                            return NT_STATUS.OBJECT_NAME_COLLISION;	// Access denied as it is already there
-
-                        if (Access == FileAccess.Read)              // Office 2003 makes the stupid call of: "CreateNew with Read access", C# refuse to execute it!
-                            Access = FileAccess.ReadWrite;
-                        //FIXME: Implement FileMode and FileShare
-                        FileObject = new MyFileContext(Name, false, iPhoneFile.Open(phone,PathName, Access));
-                        return NT_STATUS.OK;
-
-                    case FileMode.Create:
-                    case FileMode.OpenOrCreate:
-                        // Use existing file if possible otherwise create new
-                        FileObject = new MyFileContext(Name, false, iPhoneFile.Open(phone,PathName, Access));
-                        return NT_STATUS.OK;
-                    default:
-                        return NT_STATUS.INVALID_PARAMETER;
-                }
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine("Warning->Exception when opening filestream: " + ex.Message);
-                return NT_STATUS.NO_SUCH_FILE;
-            }
-
-        }
         public override NT_STATUS Create(UserContext UserContext, string Name, SearchFlag Flags, FileMode Mode, FileAccess Access, FileShare Share, FileAttributes Attributes, out FileContext FileObject)
         {
             FileObject = null;
@@ -380,13 +335,13 @@ namespace lokkju.iPx.iPhoneDrive
                         if (Access == FileAccess.Read)              // Office 2003 makes the stupid call of: "CreateNew with Read access", C# refuse to execute it!
                             Access = FileAccess.ReadWrite;
                         //FIXME: Implement FileMode and FileShare
-                        FileObject = new MyFileContext(Name, false, iPhoneFile.Open(phone, PathName, Access));
+                        FileObject = new MyFileContext(Name, false, iPhoneFile.Open(phone,PathName, Access));
                         return NT_STATUS.OK;
 
                     case FileMode.Create:
                     case FileMode.OpenOrCreate:
                         // Use existing file if possible otherwise create new
-                        FileObject = new MyFileContext(Name, false, iPhoneFile.Open(phone, PathName, Access));
+                        FileObject = new MyFileContext(Name, false, iPhoneFile.Open(phone,PathName, Access));
                         return NT_STATUS.OK;
                     default:
                         return NT_STATUS.INVALID_PARAMETER;
@@ -399,6 +354,7 @@ namespace lokkju.iPx.iPhoneDrive
             }
 
         }
+
         public override NT_STATUS Rename(UserContext UserContext, string OldName, string NewName)
         {
             NT_STATUS error = NT_STATUS.OK;
@@ -440,6 +396,7 @@ namespace lokkju.iPx.iPhoneDrive
             }
             return error;
         }
+
         public override NT_STATUS Delete(UserContext UserContext, string FileName)
         {
             NT_STATUS error = NT_STATUS.OK;
@@ -462,6 +419,7 @@ namespace lokkju.iPx.iPhoneDrive
 
             return error;
         }
+
         public override NT_STATUS Flush(UserContext UserContext, FileContext FileObject)
         {
             // Will not be called very often, but make sure that the call returns after the data is writen through the final media
@@ -484,6 +442,7 @@ namespace lokkju.iPx.iPhoneDrive
 
             return NT_STATUS.OK;
         }
+
         private bool disposed = false;
 
         public void Dispose()
@@ -491,6 +450,7 @@ namespace lokkju.iPx.iPhoneDrive
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!this.disposed)
@@ -506,10 +466,12 @@ namespace lokkju.iPx.iPhoneDrive
             }
             disposed = true;
         }
+
         ~iPhoneFS()
         {
             Dispose(false);
         }
+
         public override NT_STATUS Write(UserContext UserContext, FileContext FileObject, long Offset, ref int Count, ref byte[] Buffer, int Start)
         {
             // All locking issies are handled in the calling class, expect if other application access the files from outside 
@@ -566,6 +528,7 @@ namespace lokkju.iPx.iPhoneDrive
             }
             return error;
         }
+
         public override NT_STATUS Lock(UserContext UserContext, FileContext FileObject, long Offset, long Count)
         {
             return NT_STATUS.OK;
@@ -612,6 +575,7 @@ namespace lokkju.iPx.iPhoneDrive
             return error;
             */
         }
+
         public override NT_STATUS Unlock(UserContext UserContext, FileContext FileObject, long Offset, long Count)
         {
             return NT_STATUS.OK;
@@ -656,6 +620,7 @@ namespace lokkju.iPx.iPhoneDrive
             return NoError;
             */
         }
+
         public override NT_STATUS Read(UserContext UserContext, FileContext FileObject, long Offset, ref int Count, ref byte[] Buffer, int Start)
         {
             // All locking issues are handled in the calling class, the only read collision that can occure are when other
@@ -709,17 +674,21 @@ namespace lokkju.iPx.iPhoneDrive
             }
             return error;
         }
+
         public override NT_STATUS SetAttributes(UserContext UserContext, FileContext FileObject, DirectoryContext data)
         {
-            // We aware of the delete flag! Is often used to delete files. 
-            NT_STATUS error = NT_STATUS.OK;
-            //FIXME: attributes?  what attributes?
+           NT_STATUS error = NT_STATUS.OK;
+            //FIXME: attributes?  what attributes? The attributes of the file, e.g. archive, hidden ....
             return error;
         }
+
         public override NT_STATUS GetAttributes(UserContext UserContext, FileContext FileObject, out DirectoryContext data)
         {
             //FIXME: attributes?  what attributes?
+
+            //Should be implemented very fast, is called quit often
             data = new DirectoryContext();
+
             string FileName = root + FileObject.Name;
             DateTime dd = new DateTime(2007, 1, 1);
             if (phone.Exists(FileName) && !phone.IsDirectory(FileName))
@@ -750,6 +719,7 @@ namespace lokkju.iPx.iPhoneDrive
                 return NT_STATUS.OBJECT_PATH_NOT_FOUND;
             return NT_STATUS.OBJECT_NAME_NOT_FOUND;  
         }
+
         public override NT_STATUS GetAttributes(UserContext UserContext, string PathName, out DirectoryContext data) //, SearchFlag SF)
         {
             //FIXME: attributes?  what attributes?
@@ -785,12 +755,15 @@ namespace lokkju.iPx.iPhoneDrive
                 return NT_STATUS.OBJECT_PATH_NOT_FOUND;
             return NT_STATUS.OBJECT_NAME_NOT_FOUND;   
         }
+
         public override NT_STATUS GetStreamInfo(UserContext UserContext, string Name, out List<DirectoryContext> StreamInfo)
         {
-            //FIXME: streams? we don't want no streams!
-            StreamInfo = new List<DirectoryContext>();
-            return NT_STATUS.OK;
+            //RH: I guess the iPhone do not support named streams
+            StreamInfo = null;
+            return NT_STATUS.NOT_IMPLEMENTED;
         }
+
+        
         private static string GetShortName(string LongName)
         {
             System.Text.StringBuilder ShortName = new System.Text.StringBuilder(260);
