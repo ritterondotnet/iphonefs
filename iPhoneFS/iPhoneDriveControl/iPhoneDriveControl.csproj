@@ -28,19 +28,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MicroKernel, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="NeoGeo.Library.SMB, Version=1.0.2913.30474, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Projects\iPhoneFS\iPhoneFS\iPhoneDriveControl\NonFree\MicroKernel.dll</HintPath>
+      <HintPath>NonFree\NeoGeo.Library.SMB.dll</HintPath>
     </Reference>
-    <Reference Include="NamedPipe, Version=1.0.2607.17122, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="NeoGeo.Library.SMB.Provider, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Projects\iPhoneFS\iPhoneFS\iPhoneDriveControl\NonFree\NamedPipe.dll</HintPath>
-    </Reference>
-    <Reference Include="PortalSMB, Version=1.0.2607.17122, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Projects\iPhoneFS\iPhoneFS\iPhoneDriveControl\NonFree\PortalSMB.dll</HintPath>
+      <HintPath>NonFree\NeoGeo.Library.SMB.Provider.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
@@ -89,6 +86,8 @@
     <Content Include="MainIcon.ico" />
     <Content Include="NonFree\MicroKernel.dll" />
     <Content Include="NonFree\NamedPipe.dll" />
+    <Content Include="NonFree\NeoGeo.Library.SMB.dll" />
+    <Content Include="NonFree\NeoGeo.Library.SMB.Provider.dll" />
     <Content Include="NonFree\PortalSMB.dll" />
   </ItemGroup>
   <ItemGroup>
@@ -99,6 +98,10 @@
     <ProjectReference Include="..\FileSystemInterface\FileSystemInterface.csproj">
       <Project>{EC64515A-BB74-4A3F-AAA7-0AC363E1C0BD}</Project>
       <Name>FileSystemInterface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\iPhoneDriveFilesystem\iPhoneDriveFilesystem.csproj">
+      <Project>{5FD50E5E-1DE2-4B5D-8E5C-446D9D5E163E}</Project>
+      <Name>iPhoneDriveFilesystem</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

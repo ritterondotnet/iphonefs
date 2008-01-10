@@ -28,7 +28,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="NeoGeo.Library.SMB.Provider, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\iPhoneDriveControl\NonFree\NeoGeo.Library.SMB.Provider.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -41,10 +46,6 @@
     <ProjectReference Include="..\..\ManzanaLocal\ManzanaLocal.csproj">
       <Project>{D51A65E2-60B2-41A5-84F0-1A288B735BD5}</Project>
       <Name>ManzanaLocal</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\FileSystemInterface\FileSystemInterface.csproj">
-      <Project>{EC64515A-BB74-4A3F-AAA7-0AC363E1C0BD}</Project>
-      <Name>FileSystemInterface</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

@@ -13,9 +13,6 @@ obj\Release\iPhoneDriveControl.pdb
 bin\Debug\iPhoneDriveControl.exe.config
 bin\Debug\iPhoneDriveControl.exe
 bin\Debug\iPhoneDriveControl.pdb
-bin\Debug\MicroKernel.dll
-bin\Debug\NamedPipe.dll
-bin\Debug\PortalSMB.dll
 obj\Debug\ResolveAssemblyReference.cache
 obj\Debug\iPhoneDriveControl.Properties.Resources.resources
 obj\Debug\Suchwerk.SuchwerkService.resources
@@ -32,3 +29,7 @@ bin\Debug\ManzanaLocal.pdb
 bin\Release\ManzanaLocal.dll
 bin\Release\ManzanaLocal.pdb
 bin\Debug\ManzanaLocal.dll
+bin\Debug\NeoGeo.Library.SMB.dll
+bin\Debug\NeoGeo.Library.SMB.Provider.dll
+bin\Debug\iPhoneFS.dll
+bin\Debug\iPhoneFS.pdb

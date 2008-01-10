@@ -10,9 +10,8 @@ bin\Release\Interface.dll
 bin\Release\Interface.pdb
 obj\Release\iPhoneFS.dll
 obj\Release\iPhoneFS.pdb
-bin\Debug\Interface.dll
-bin\Debug\Interface.pdb
 bin\Release\ManzanaLocal.dll
 bin\Release\ManzanaLocal.pdb
 bin\Debug\ManzanaLocal.dll
 bin\Debug\ManzanaLocal.pdb
+bin\Debug\NeoGeo.Library.SMB.Provider.dll

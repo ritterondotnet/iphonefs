@@ -11,8 +11,9 @@ using System.Configuration.Install;
 using System.IO;
 using Manzana;
 
-using Suchwerk.Interfaces;
-using MicroKernel;
+using NeoGeo.Library.SMB;
+using NeoGeo.Library.SMB.Provider;
+using NeoGeo.Library.SMB.Utilities;
 
 #if(!SERVICE)
 using System.Drawing;
@@ -359,7 +360,7 @@ namespace Suchwerk
                 return false;
             }
         }
-        Suchwerk.Interfaces.ISMBPortal CIFS = null;
+        SMB CIFS = null;
         iPhone phone;
         string drive;
         //Eigentliche Funktionalität des Programms !
@@ -399,18 +400,21 @@ namespace Suchwerk
                     else
                         ServerName = ServerName.Replace("%X", HostName.Substring(0, copy));
                 }
-
-                CIFS = (ISMBPortal)ObjectFactory.CreateInstance("Suchwerk.Interface.ISMBPortal");
+                CIFS = new SMB();
+                FileSystemProviderCollection fspc = new FileSystemProviderCollection();
+                FileSystemProvider fsp = new lokkju.iPx.iPhoneDrive.iPhoneFS();
+                fspc.Add(new lokkju.iPx.iPhoneDrive.iPhoneFS());
+                CIFS.SetFileSystems(fspc);
                 CIFS.Start(
                     ServerName,
                     (ushort)16384,
                     0,
-                    5, // Anzahl der gleichzeitigen Anfragen
+                    5, // Number of concurrent queries
                     DomainController);
             }
             catch (Exception ex)
             {
-                throw new ApplicationException("CIFS Server konnte nicht eingerichtet werden.",ex);
+                throw new ApplicationException("CIFS server could not be established.", ex);
             }
         }
         public void StartServer()
@@ -439,7 +443,7 @@ namespace Suchwerk
         {
             drive = iPhoneDriveControl.NetworkDriveManagement.NextDrive();
             Trace.WriteLine("Found drive '" + drive + "', mapping it...");
-            int ret = iPhoneDriveControl.NetworkDriveManagement.MapDrive(drive, @"\\iphonedrive\iphonedrive");
+            int ret = iPhoneDriveControl.NetworkDriveManagement.MapDrive(drive, @"\\iphonedrive\iPhoneFS");
             Trace.WriteLine("Ok,'" + drive + "' is pointing at your iPhone!");
             
         }
