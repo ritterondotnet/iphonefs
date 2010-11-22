@@ -109,6 +109,7 @@ namespace Manzana {
 			drn4 = new DeviceRestoreNotificationCallback(RecoveryDisconnectCallback);
 
 			void* notification;
+            
 			int ret = MobileDevice.AMDeviceNotificationSubscribe(dnc, 0, 0, 0, out notification);
 			if (ret != 0) {
 				throw new Exception("AMDeviceNotificationSubscribe failed with error " + ret);

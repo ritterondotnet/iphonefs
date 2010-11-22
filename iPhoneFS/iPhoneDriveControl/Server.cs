@@ -349,7 +349,7 @@ namespace com.lokkju.iphonefs
             this.Controls.Add(this.CBFatal);
             this.Controls.Add(this.button1);
             this.Name = "Form1";
-            this.Text = "iPhoneExplorer - Copyright 2007 Lokkju Inc - !!!ALPHA!!!";
+            this.Text = "iPhoneFS - Copyright 2010 Lokkju Inc - !!!ALPHA!!!";
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -359,7 +359,7 @@ namespace com.lokkju.iphonefs
         [STAThread]
         static void Main()
         {
-            ensureDllExists("iTunesMobileDevice.dll");
+            //ensureDllExists("iTunesMobileDevice.dll");
             Application.Run(new DriveControlServer());
         }
 

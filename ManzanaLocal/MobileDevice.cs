@@ -196,18 +196,18 @@ namespace Manzana {
 
 	internal class MobileDevice {
         const string DLLName = "iTunesMobileDevice.dll";
-		static readonly FileInfo iTunesMobileDeviceFile = new FileInfo(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Apple Inc.\Apple Mobile Device Support\Shared", "iTunesMobileDeviceDLL", DLLName).ToString());
-		static readonly DirectoryInfo ApplicationSupportDirectory = new DirectoryInfo(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Apple Inc.\Apple Application Support", "InstallDir", Environment.CurrentDirectory).ToString());
+		//static readonly FileInfo iTunesMobileDeviceFile = new FileInfo(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Apple Inc.\Apple Mobile Device Support\Shared", "iTunesMobileDeviceDLL", DLLName).ToString());
+		//static readonly DirectoryInfo ApplicationSupportDirectory = new DirectoryInfo(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Apple Inc.\Apple Application Support", "InstallDir", Environment.CurrentDirectory).ToString());
 
         static MobileDevice() {
             // try to find the dll automatically
-            string addpath = iTunesMobileDeviceFile.DirectoryName;
-            if (!iTunesMobileDeviceFile.Exists) {
+            string addpath;// = iTunesMobileDeviceFile.DirectoryName;
+            //if (!iTunesMobileDeviceFile.Exists) {
                 addpath = Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles) + @"\Apple\Mobile Device Support\bin";
 				if (!File.Exists(addpath + @"\" + DLLName))
 					addpath = @"C:\Program Files\Apple\Mobile Device Support\bin";
-			}
-            Environment.SetEnvironmentVariable("Path", string.Join(";", new String[] { Environment.GetEnvironmentVariable("Path"), addpath, ApplicationSupportDirectory.FullName }));
+			//}
+            Environment.SetEnvironmentVariable("Path", string.Join(";", new String[] { Environment.GetEnvironmentVariable("Path"), addpath/*, ApplicationSupportDirectory.FullName */}));
         }
 
 		[DllImport("CoreFoundation.dll", CallingConvention = CallingConvention.Cdecl)]
