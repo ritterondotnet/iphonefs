@@ -9,7 +9,7 @@
  *                                                                    *
  * @category   iPhone                                                 *
  * @package    iPhone File System for Windows                         *
- * @copyright  Copyright (c) 2007 Lokkju Inc. (http://www.lokkju.com) *
+ * @copyright  Copyright (c) 2010 Lokkju Inc. (http://www.lokkju.com) *
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GNU v3 Licence *
  *                                                                    *
  * $Revision::                            $:  Revision of last commit *
