@@ -1,22 +1,35 @@
-/*--------------------------------------------------------------------*\
- * This source file is subject to the GPLv3 license that is bundled   *
- * with this package in the file COPYING.                             *
- * It is also available through the world-wide-web at this URL:       *
- * http://www.gnu.org/licenses/gpl-3.0.txt                            *
- * If you did not receive a copy of the license and are unable to     *
- * obtain it through the world-wide-web, please send an email         *
- * to bsd-license@lokkju.com so we can send you a copy immediately.   *
- *                                                                    *
- * @category   iPhone                                                 *
- * @package    iPhone File System for Windows                         *
- * @copyright  Copyright (c) 2010 Lokkju Inc. (http://www.lokkju.com) *
- * @license    http://www.gnu.org/licenses/gpl-3.0.txt GNU v3 Licence *
- *                                                                    *
- * $Revision::                            $:  Revision of last commit *
- * $Author::                              $:  Author of last commit   *
- * $Date::                                $:  Date of last commit     *
- * $Id::                                                            $ *
-\*--------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*\
+* Copyright (C) 2007-2011 Lokkju, Inc <lokkju@lokkju.com>                     *
+*                                                                             *
+* This program is free software; you can redistribute it and/or modify it     *
+* under the terms of the GNU General Public License as published by the Free  *
+* Software Foundation; either version 3 of the License, or (at your option)   *
+* any later version.                                                          *
+*                                                                             *
+* This program is distributed in the hope that it will be useful, but WITHOUT *
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or       *
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for    *
+* more details.                                                               *
+* You should have received a copy of the GNU General Public License along     *
+* with this program; if not, see <http://www.gnu.org/licenses>.               *
+*                                                                             *
+* Additional permission under GNU GPL version 3 section 7:                    *
+* If you modify this Program, or any covered work, by linking or combining it *
+* with the NeoGeo SMB library, or a modified version of that library,         *
+* the licensors of this Program grant you additional permission to convey the *
+* resulting work as long as the library is distributed without fee.           *
+*-----------------------------------------------------------------------------*
+* @category   iPhone                                                          *
+* @package    iPhone File System for Windows                                  *
+* @copyright  Copyright (c) 2010 Lokkju Inc. (http://www.lokkju.com)          *
+* @license    http://www.gnu.org/licenses/gpl-3.0.txt GNU v3 Licence          *
+*                                                                             *
+* $Revision::                                     $:  Revision of last commit *
+* $Author::                                         $:  Author of last commit *
+* $Date::                                             $:  Date of last commit *
+* $Id::                                                                     $ *
+\*---------------------------------------------------------------------------*/
+
 /*
  * This file is based on work under the following copyright and permission
  * notice:
@@ -145,7 +158,12 @@ namespace Manzana {
 		public byte		write_file_pipe;    /* 35 */
 		public byte		write_input_pipe;   /* 36 */
 	};
-
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    internal struct afc_dictionary
+    {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0)]
+        byte[] unknown;   /* size unknown */
+    }
 #if false
 	[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=1)]
 	internal struct afc_directory {
@@ -232,7 +250,17 @@ namespace Manzana {
 		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
 		unsafe public extern static int AFCDirectoryOpen(void* conn, byte[] path, ref void* dir);
 
-		unsafe public static int AFCDirectoryOpen(void* conn, string path, ref void* dir) {
+        /// <summary>
+        /// Pass in a IntPtr. It will be filled.  Use it with the GetKeyValue shite
+        /// </summary>
+        /// <param name="conn">Pointer to an afc_connection struct</param>
+        /// <param name="info">Pointer to an afc_dictionary struct</param>
+        /// <returns>afc_error</returns>
+        [DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+        unsafe public extern static int AFCDeviceInfoOpen(void* conn, ref void* buffer);
+        
+        unsafe public static int AFCDirectoryOpen(void* conn, string path, ref void* dir)
+        {
 			return AFCDirectoryOpen(conn, Encoding.UTF8.GetBytes(path), ref dir);
 		}
 

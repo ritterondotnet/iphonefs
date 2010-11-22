@@ -1,3 +1,39 @@
+/*---------------------------------------------------------------------------*\
+* Copyright (C) 2007-2011 Lokkju, Inc <lokkju@lokkju.com>                     *
+*                                                                             *
+* This program is free software; you can redistribute it and/or modify it     *
+* under the terms of the GNU General Public License as published by the Free  *
+* Software Foundation; either version 3 of the License, or (at your option)   *
+* any later version.                                                          *
+*                                                                             *
+* This program is distributed in the hope that it will be useful, but WITHOUT *
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or       *
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for    *
+* more details.                                                               *
+* You should have received a copy of the GNU General Public License along     *
+* with this program; if not, see <http://www.gnu.org/licenses>.               *
+*                                                                             *
+* Additional permission under GNU GPL version 3 section 7:                    *
+* If you modify this Program, or any covered work, by linking or combining it *
+* with the NeoGeo SMB library, or a modified version of that library,         *
+* the licensors of this Program grant you additional permission to convey the *
+* resulting work as long as the library is distributed without fee.           *
+*-----------------------------------------------------------------------------*
+* @category   iPhone                                                          *
+* @package    iPhone File System for Windows                                  *
+* @copyright  Copyright (c) 2010 Lokkju Inc. (http://www.lokkju.com)          *
+* @license    http://www.gnu.org/licenses/gpl-3.0.txt GNU v3 Licence          *
+*                                                                             *
+* $Revision::                                     $:  Revision of last commit *
+* $Author::                                         $:  Author of last commit *
+* $Date::                                             $:  Date of last commit *
+* $Id::                                                                     $ *
+\*---------------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------*\
+ * Some code Copyright 2007 Richard.Heinrich@palissimo.de             *
+\*--------------------------------------------------------------------*/
+
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -9,7 +45,7 @@ using System.Collections.Specialized;
 using NeoGeo.Library.SMB.Provider;
 
 using Manzana;
-namespace lokkju.iPx.iPhoneDrive
+namespace com.lokkju.iphonefs
 {
 
     /// <summary>
@@ -208,9 +244,9 @@ namespace lokkju.iPx.iPhoneDrive
             data.Sectors = 1;							    // FreeBytes and TotalBytes will be multiplied by this value
 
             //FIXME: cache/decache this info?
-            iPhone.AFCDeviceInfo di = phone.GetDeviceInfo();
-            data.FreeBytes = di.FileSystemFreeBytes;
-            data.TotalBytes = di.FileSystemTotalBytes;
+            phone.RefreshFileSystemInfo();
+            data.FreeBytes = phone.FileSystemFreeBytes;
+            data.TotalBytes = phone.FileSystemTotalBytes;
             return NT_STATUS.OK;
         }
 
@@ -223,7 +259,8 @@ namespace lokkju.iPx.iPhoneDrive
                 case 0x00090028: // FSCTL_IS_VOLUME_MOUNTED
                     ValidOutputLength = 0;
                     //FIXME: make FSCTL_IS_VOLUME_MOUNTED return based on if the iPhone is connected
-                    return 0;           // Return no error as the Filesystem is here
+                    if (phone.IsConnected) return NT_STATUS.OK;
+                    return NT_STATUS.ACCESS_DENIED;           // Return no error as the Filesystem is here
                 default:
                     Trace.WriteLine("Warning->IOCTL is implemented, but this method not: 0x" + Command.ToString("X8"));
                     //Debugger.Break();
@@ -368,7 +405,7 @@ namespace lokkju.iPx.iPhoneDrive
                 {
                     //FIXME: We don't have a way to move directories
                     //DirectoryBroker.Move(phone,root + OldName, root + NewName);
-                    phone.Move(root + OldName, root + NewName);
+                    phone.Rename(root + OldName, root + NewName);
                     return NT_STATUS.OBJECT_NAME_COLLISION;
                 }
                 catch (Exception e)
@@ -386,7 +423,7 @@ namespace lokkju.iPx.iPhoneDrive
                     return NT_STATUS.OBJECT_NAME_COLLISION;
                 try
                 {
-                    phone.Move(root + OldName, root + NewName);
+                    phone.Rename(root + OldName, root + NewName);
                 }
                 catch (Exception e)
                 {
@@ -697,7 +734,7 @@ namespace lokkju.iPx.iPhoneDrive
                 data.CreationTime = dd;
                 data.LastAccessTime = dd;
                 data.LastWriteTime = dd;
-                data.FileSize = phone.FileSize(FileName);                      // data.AllocationSize willbe set to the same value
+                data.FileSize = (long)phone.FileSize(FileName);                      // data.AllocationSize willbe set to the same value
                 data.Name = FileObject.Name;
                 data.ShortName = ""; //GetShortName(FileObject.Name);
                 return NT_STATUS.OK;
@@ -708,7 +745,7 @@ namespace lokkju.iPx.iPhoneDrive
                 data.CreationTime = dd;
                 data.LastAccessTime = dd;
                 data.LastWriteTime = dd;
-                data.FileSize = phone.FileSize(FileName);
+                data.FileSize = (long)phone.FileSize(FileName);
                 data.Name = FileObject.Name;
                 data.ShortName = "";//GetShortName(FileName);
                 return NT_STATUS.OK;
@@ -732,7 +769,7 @@ namespace lokkju.iPx.iPhoneDrive
                 data.CreationTime = dd;
                 data.LastAccessTime = dd;
                 data.LastWriteTime = dd;
-                data.FileSize = phone.FileSize(FileName);                      // data.AllocationSize willbe set to the same value
+                data.FileSize = (long)phone.FileSize(FileName);                      // data.AllocationSize willbe set to the same value
                 data.Name = Path.GetFileName(FileName);
                 data.ShortName = "";//GetShortName(PathName);
                 return NT_STATUS.OK;
@@ -743,7 +780,7 @@ namespace lokkju.iPx.iPhoneDrive
                 data.CreationTime = dd;
                 data.LastAccessTime = dd;
                 data.LastWriteTime = dd;
-                data.FileSize = phone.FileSize(FileName);
+                data.FileSize = (long)phone.FileSize(FileName);
                 string[] DirName = PathName.Split("/\\".ToCharArray());
                 data.Name = (DirName.Length > 0)?DirName[DirName.Length-1]:"/";
                 data.ShortName = "";//GetShortName(FileName);

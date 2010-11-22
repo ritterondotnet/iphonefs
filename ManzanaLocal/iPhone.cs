@@ -1,22 +1,35 @@
-/*--------------------------------------------------------------------*\
- * This source file is subject to the GPLv3 license that is bundled   *
- * with this package in the file COPYING.                             *
- * It is also available through the world-wide-web at this URL:       *
- * http://www.gnu.org/licenses/gpl-3.0.txt                            *
- * If you did not receive a copy of the license and are unable to     *
- * obtain it through the world-wide-web, please send an email         *
- * to bsd-license@lokkju.com so we can send you a copy immediately.   *
- *                                                                    *
- * @category   iPhone                                                 *
- * @package    iPhone File System for Windows                         *
- * @copyright  Copyright (c) 2010 Lokkju Inc. (http://www.lokkju.com) *
- * @license    http://www.gnu.org/licenses/gpl-3.0.txt GNU v3 Licence *
- *                                                                    *
- * $Revision::                            $:  Revision of last commit *
- * $Author::                              $:  Author of last commit   *
- * $Date::                                $:  Date of last commit     *
- * $Id::                                                            $ *
-\*--------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*\
+* Copyright (C) 2007-2011 Lokkju, Inc <lokkju@lokkju.com>                     *
+*                                                                             *
+* This program is free software; you can redistribute it and/or modify it     *
+* under the terms of the GNU General Public License as published by the Free  *
+* Software Foundation; either version 3 of the License, or (at your option)   *
+* any later version.                                                          *
+*                                                                             *
+* This program is distributed in the hope that it will be useful, but WITHOUT *
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or       *
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for    *
+* more details.                                                               *
+* You should have received a copy of the GNU General Public License along     *
+* with this program; if not, see <http://www.gnu.org/licenses>.               *
+*                                                                             *
+* Additional permission under GNU GPL version 3 section 7:                    *
+* If you modify this Program, or any covered work, by linking or combining it *
+* with the NeoGeo SMB library, or a modified version of that library,         *
+* the licensors of this Program grant you additional permission to convey the *
+* resulting work as long as the library is distributed without fee.           *
+*-----------------------------------------------------------------------------*
+* @category   iPhone                                                          *
+* @package    iPhone File System for Windows                                  *
+* @copyright  Copyright (c) 2010 Lokkju Inc. (http://www.lokkju.com)          *
+* @license    http://www.gnu.org/licenses/gpl-3.0.txt GNU v3 Licence          *
+*                                                                             *
+* $Revision::                                     $:  Revision of last commit *
+* $Author::                                         $:  Author of last commit *
+* $Date::                                             $:  Date of last commit *
+* $Id::                                                                     $ *
+\*---------------------------------------------------------------------------*/
+
 /*
  * This file is based on work under the following copyright and permission
  * notice:
@@ -52,6 +65,7 @@
 // TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+*/
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -59,13 +73,16 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
-*/
+
 namespace Manzana {
 	/// <summary>
 	/// Exposes access to the Apple iPhone
 	/// </summary>
 	public class iPhone {
 		#region Locals
+        private long fileSystemTotalBytes;
+        private long fileSystemFreeBytes;
+        private int fileSystemBlockSize;
 		private DeviceNotificationCallback			dnc;
 		private DeviceRestoreNotificationCallback	drn1;
 		private DeviceRestoreNotificationCallback	drn2;
@@ -198,7 +215,7 @@ namespace Manzana {
         /// <summary>
         /// Returns if we are connected to jailbroken iphone
         /// </summary>
-        public Boolean IsJailbreak {
+        public bool IsJailbreak {
             get {
                 return wasAFC2 || (connected ? Exists("/Applications") : false);
             }
@@ -220,6 +237,28 @@ namespace Manzana {
 				current_directory = new_path;
 			}
 		}
+
+        public long FileSystemFreeBytes
+        {
+            get
+            {
+                return fileSystemFreeBytes;
+            }
+        }
+        public long FileSystemTotalBytes
+        {
+            get
+            {
+                return fileSystemTotalBytes;
+            }
+        }
+        public int FileSystemBlockSize
+        {
+            get
+            {
+                return fileSystemBlockSize;
+            }
+        }
 		#endregion	// Properties
 
 		#region Events
@@ -328,6 +367,51 @@ namespace Manzana {
 		#endregion	// Events
 
 		#region Filesystem
+
+        unsafe public void RefreshFileSystemInfo()
+        {
+            void * dict = null;
+            void* key;
+            void* val;
+            string skey;
+            string sval;
+            long lval;
+            int ival;
+            int ret = MobileDevice.AFCDeviceInfoOpen(hAFC, ref dict);
+            if (ret == 0)
+            {
+                try
+                {
+                    while ((MobileDevice.AFCKeyValueRead(dict, out key, out val) == 0) && (skey = Marshal.PtrToStringAnsi(new IntPtr(key))) != null && (sval = Marshal.PtrToStringAnsi(new IntPtr(val))) != null)
+                    {
+                        switch (skey)
+                        {
+                            case "FSFreeBytes":
+                                long.TryParse(sval, out lval);
+                                fileSystemFreeBytes = lval;
+                                break;
+                            case "FSTotalBytes":
+                                long.TryParse(sval, out lval);
+                                fileSystemTotalBytes = lval;
+                                break;
+                            case "FSBlockSize":
+                                Int32.TryParse(sval, out ival);
+                                fileSystemBlockSize = ival;
+                                break;
+                            default:
+                                System.Diagnostics.Trace.WriteLine(skey + ":" + sval);
+                                break;
+                        }
+                    }
+                }
+                catch (AccessViolationException ave) { }
+                finally
+                {
+                    MobileDevice.AFCKeyValueClose(dict);
+                }
+            }
+        }
+          
 		/// <summary>
 		/// Returns the names of files in a specified directory
 		/// </summary>

@@ -1,4 +1,40 @@
-﻿//Define this constant to change the project to a Windows Server application, but do not forget to register 
+﻿/*---------------------------------------------------------------------------*\
+* Copyright (C) 2007-2011 Lokkju, Inc <lokkju@lokkju.com>                     *
+*                                                                             *
+* This program is free software; you can redistribute it and/or modify it     *
+* under the terms of the GNU General Public License as published by the Free  *
+* Software Foundation; either version 3 of the License, or (at your option)   *
+* any later version.                                                          *
+*                                                                             *
+* This program is distributed in the hope that it will be useful, but WITHOUT *
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or       *
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for    *
+* more details.                                                               *
+* You should have received a copy of the GNU General Public License along     *
+* with this program; if not, see <http://www.gnu.org/licenses>.               *
+*                                                                             *
+* Additional permission under GNU GPL version 3 section 7:                    *
+* If you modify this Program, or any covered work, by linking or combining it *
+* with the NeoGeo SMB library, or a modified version of that library,         *
+* the licensors of this Program grant you additional permission to convey the *
+* resulting work as long as the library is distributed without fee.           *
+*-----------------------------------------------------------------------------*
+* @category   iPhone                                                          *
+* @package    iPhone File System for Windows                                  *
+* @copyright  Copyright (c) 2010 Lokkju Inc. (http://www.lokkju.com)          *
+* @license    http://www.gnu.org/licenses/gpl-3.0.txt GNU v3 Licence          *
+*                                                                             *
+* $Revision::                                     $:  Revision of last commit *
+* $Author::                                         $:  Author of last commit *
+* $Date::                                             $:  Date of last commit *
+* $Id::                                                                     $ *
+\*---------------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------*\
+ * Some code Copyright 2007 Richard.Heinrich@palissimo.de             *
+\*--------------------------------------------------------------------*/
+
+//Define this constant to change the project to a Windows Server application, but do not forget to register 
 //the service with installutil 
 
 //#define SERVICE
@@ -26,10 +62,10 @@ using System.Drawing;
 using System.Windows.Forms;
 #endif
 
-namespace Suchwerk
+namespace com.lokkju.iphonefs
 {
 #if (SERVICE)
-	public class SuchwerkService : ServiceBase
+	public class DriveControlServer : ServiceBase
 	{
 		/// <summary> 
 		/// Erforderliche Designervariable.
@@ -38,7 +74,7 @@ namespace Suchwerk
         private IConfigAdapter Config;			// Muss global sein damit Config-Klasse nie entladen wird !!
         private MyTextWriterTraceListener LogFileListner;
 
-		public SuchwerkService()
+        public DriveControlServer()
 		{
 			// Dieser Aufruf ist für den Windows Komponenten-Designer erforderlich.
 			InitializeComponent();
@@ -53,7 +89,7 @@ namespace Suchwerk
         	if (args.Length==0)
 			{	// Service Case, so start normal
 				ServiceBase ToRun;
-				ToRun = new SuchwerkService();
+                ToRun = new DriveControlServer();
 
 				ServiceBase.Run(ToRun);
                 return;
@@ -142,7 +178,7 @@ namespace Suchwerk
 		}
 
 #else
-    public class Form1 : System.Windows.Forms.Form
+    public class DriveControlServer : System.Windows.Forms.Form
     {
         private System.Windows.Forms.Button button1;
         internal System.Windows.Forms.TextBox TraceTextBox;
@@ -155,7 +191,7 @@ namespace Suchwerk
         private MyTextWriterTraceListener LogFileListner;
         private delegate void SetTextCallback(string Text);
 
-        public Form1()
+        public DriveControlServer()
         {
             InitializeComponent();
 
@@ -324,7 +360,7 @@ namespace Suchwerk
         static void Main()
         {
             ensureDllExists("iTunesMobileDevice.dll");
-            Application.Run(new Form1());
+            Application.Run(new DriveControlServer());
         }
 
         private void button1_Click(object sender, System.EventArgs e)
@@ -479,9 +515,9 @@ namespace Suchwerk
     public class MyTextWriterTraceListener : TraceListener
     {
         private TextWriterTraceListener Output;
-        private Suchwerk.Form1 Form;
+        private com.lokkju.iphonefs.DriveControlServer Form;
 
-        public MyTextWriterTraceListener(string Path, Suchwerk.Form1 form)
+        public MyTextWriterTraceListener(string Path, com.lokkju.iphonefs.DriveControlServer form)
         {
             Output = new TextWriterTraceListener(Path);
             Form = form;
