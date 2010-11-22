@@ -1,7 +1,28 @@
+/*--------------------------------------------------------------------*\
+ * This source file is subject to the GPLv3 license that is bundled   *
+ * with this package in the file COPYING.                             *
+ * It is also available through the world-wide-web at this URL:       *
+ * http://www.gnu.org/licenses/gpl-3.0.txt                            *
+ * If you did not receive a copy of the license and are unable to     *
+ * obtain it through the world-wide-web, please send an email         *
+ * to bsd-license@lokkju.com so we can send you a copy immediately.   *
+ *                                                                    *
+ * @category   iPhone                                                 *
+ * @package    iPhone File System for Windows                         *
+ * @copyright  Copyright (c) 2010 Lokkju Inc. (http://www.lokkju.com) *
+ * @license    http://www.gnu.org/licenses/gpl-3.0.txt GNU v3 Licence *
+ *                                                                    *
+ * $Revision::                            $:  Revision of last commit *
+ * $Author::                              $:  Author of last commit   *
+ * $Date::                                $:  Date of last commit     *
+ * $Id::                                                            $ *
+\*--------------------------------------------------------------------*/
+/*
+ * This file is based on work under the following copyright and permission
+ * notice:
 // Software License Agreement (BSD License)
 // 
 // Copyright (c) 2007, Peter Dennis Bartok <PeterDennisBartok@gmail.com>
-// Copyright (c) 2007, Lokkju Inc. <lokkju@lokkju.com>
 // All rights reserved.
 // 
 // Redistribution and use of this software in source and binary forms, with or without modification, are
@@ -35,14 +56,15 @@
 // Based on code developed by geohot, ixtli, nightwatch, warren
 // See http://iphone.fiveforty.net/wiki/index.php?title=Main_Page
 //
-
+*/
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32;
 
-namespace Manzana
-{
+namespace Manzana {
 	internal enum AppleMobileErrors
 	{
 
@@ -62,8 +84,11 @@ namespace Manzana
 	}
 
 	/// <summary>
-	/// Structure describing the iPhone
+	/// Structure describing the iPhone - no longer used
 	/// </summary>
+	/// Just opaque block of memory - give a decent chunk
+	/// 
+#if false
 	[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=1)]
 	public struct AMDevice {
 		[MarshalAs(UnmanagedType.ByValArray, SizeConst=16)]
@@ -78,6 +103,10 @@ namespace Manzana
 		internal uint		lockdown_conn;	/* 36 */
 		[MarshalAs(UnmanagedType.ByValArray, SizeConst=8)]
 		internal byte[]		unknown3;		/* 40 */
+		[MarshalAs(UnmanagedType.ByValArray, SizeConst=6*16+1)]
+		internal byte[]		unknown4;		/* 48  + in iTunes 8.0, by iFunbox.dev */
+		[MarshalAs(UnmanagedType.ByValArray, SizeConst=8)]
+		internal byte[]		unknown5;		/* 97  + in iTunes 8.0, by iFunbox.dev */
 	}
 
 	[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=1)]
@@ -88,17 +117,18 @@ namespace Manzana
 		DeviceNotificationCallback	callback;   /* 12 */ 
 		uint						unknown3;	/* 16 */
 	}
-
+#endif
 	[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=1)]
 	internal struct AMDeviceNotificationCallbackInfo {
-		public AMDevice dev {
+		unsafe public void* dev {
 			get {
-				return (AMDevice)Marshal.PtrToStructure(dev_ptr, typeof(AMDevice));
+				return dev_ptr;
 			}
 		}
-		internal IntPtr	dev_ptr;
+		unsafe internal void* dev_ptr;
 		public NotificationMessage msg;
 	}
+
 
 	[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=1)]
 	internal struct AMRecoveryDevice {
@@ -116,23 +146,12 @@ namespace Manzana
 		public byte		write_input_pipe;   /* 36 */
 	};
 
+#if false
 	[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=1)]
 	internal struct afc_directory {
 		[MarshalAs(UnmanagedType.ByValArray, SizeConst=0)]
 		byte[] unknown;   /* size unknown */
 	};
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    internal struct afc_dictionary
-    {
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0)]
-        byte[] unknown;   /* size unknown */
-    }
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    internal struct afc_device_info
-    {
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 200)]
-        public byte[] unknown;   /* size unknown */
-    }
 
 	[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=1)]
 	internal struct afc_connection {
@@ -150,7 +169,7 @@ namespace Manzana
 		IntPtr afc_lock;                 /* 36 */
 		uint context;           /* 40 */
 	};
-
+#endif
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void DeviceNotificationCallback(ref AMDeviceNotificationCallbackInfo callback_info);
@@ -158,176 +177,204 @@ namespace Manzana
 	internal delegate void DeviceRestoreNotificationCallback(ref AMRecoveryDevice callback_info);
 
 	internal class MobileDevice {
-		public static int AMDeviceNotificationSubscribe(DeviceNotificationCallback callback, uint unused1, uint unused2, uint unused3, ref AMDeviceNotification notification) {
-			IntPtr	ptr;
-			int		ret;
+        const string DLLName = "iTunesMobileDevice.dll";
+		static readonly FileInfo iTunesMobileDeviceFile = new FileInfo(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Apple Inc.\Apple Mobile Device Support\Shared", "iTunesMobileDeviceDLL", DLLName).ToString());
+		static readonly DirectoryInfo ApplicationSupportDirectory = new DirectoryInfo(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Apple Inc.\Apple Application Support", "InstallDir", Environment.CurrentDirectory).ToString());
 
-			ptr = IntPtr.Zero;
-			ret = AMDeviceNotificationSubscribe(callback, unused1, unused2, unused3, ref ptr);
-			if ((ret == 0) && (ptr != IntPtr.Zero)) {
-				notification = (AMDeviceNotification)Marshal.PtrToStructure(ptr, notification.GetType());
+        static MobileDevice() {
+            // try to find the dll automatically
+            string addpath = iTunesMobileDeviceFile.DirectoryName;
+            if (!iTunesMobileDeviceFile.Exists) {
+                addpath = Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles) + @"\Apple\Mobile Device Support\bin";
+				if (!File.Exists(addpath + @"\" + DLLName))
+					addpath = @"C:\Program Files\Apple\Mobile Device Support\bin";
 			}
-			return ret;
+            Environment.SetEnvironmentVariable("Path", string.Join(";", new String[] { Environment.GetEnvironmentVariable("Path"), addpath, ApplicationSupportDirectory.FullName }));
+        }
+
+		[DllImport("CoreFoundation.dll", CallingConvention = CallingConvention.Cdecl)]
+		public static unsafe extern void* __CFStringMakeConstantString(byte[] s);
+
+		public static unsafe void* CFStringMakeConstantString(string s) {
+			return __CFStringMakeConstantString(StringToCString(s));
 		}
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		private extern static int AMDeviceNotificationSubscribe(DeviceNotificationCallback callback, uint unused1, uint unused2, uint unused3, ref IntPtr am_device_notification_ptr);
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static IntPtr AMDeviceCopyDeviceIdentifier(void* device);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AMDeviceConnect(ref AMDevice device);
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AMDeviceNotificationSubscribe(DeviceNotificationCallback callback, uint unused1, uint unused2, uint unused3, out void* am_device_notification_ptr);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AMDeviceIsPaired(ref AMDevice device);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AMDeviceConnect(void* device);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AMDeviceValidatePairing(ref AMDevice device);
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AMDeviceDisconnect(void* device);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AMDeviceStartSession(ref AMDevice device);
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AMDeviceIsPaired(void* device);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AMDeviceGetConnectionID(ref AMDevice device);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AMDeviceValidatePairing(void* device);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AMDeviceStartSession(void* device);
+
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AMDeviceStopSession(void* device);
+
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AMDeviceGetConnectionID(void* device);
+
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
 		public extern static int AMRestoreModeDeviceCreate(uint unknown0, int connection_id, uint unknown1);
 
-        /// <summary>
-        /// Pass in a IntPtr. It will be filled.  Use it with the GetKeyValue shite
-        /// </summary>
-        /// <param name="conn">Pointer to an afc_connection struct</param>
-        /// <param name="info">Pointer to an afc_dictionary struct</param>
-        /// <returns>afc_error</returns>
-        [DllImport("iTunesMobileDevice.dll", CallingConvention = CallingConvention.Cdecl)]
-        public extern static int AFCDeviceInfoOpen(IntPtr conn, ref IntPtr buffer);
-        [DllImport("iTunesMobileDevice.dll", CallingConvention = CallingConvention.Cdecl)]
-        public extern static int AFCFileInfoOpen(IntPtr conn, string path,out IntPtr buffer);
-        [DllImport("iTunesMobileDevice.dll", CallingConvention = CallingConvention.Cdecl)]
-		public extern static int AFCDirectoryOpen(IntPtr conn, string path, ref IntPtr dir);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCDirectoryOpen(void* conn, byte[] path, ref void* dir);
 
-		public static int AFCDirectoryRead(IntPtr conn, IntPtr dir, ref string buffer) {
-			IntPtr ptr;
+		unsafe public static int AFCDirectoryOpen(void* conn, string path, ref void* dir) {
+			return AFCDirectoryOpen(conn, Encoding.UTF8.GetBytes(path), ref dir);
+		}
+
+		unsafe public static int AFCDirectoryRead(void* conn, void* dir, ref string buffer) {
 			int ret;
 
-			ptr = IntPtr.Zero;
+			void* ptr = null;
 			ret = AFCDirectoryRead(conn, dir, ref ptr);
-			if ((ret == 0) && (ptr != IntPtr.Zero)) {
-				buffer = Marshal.PtrToStringAnsi(ptr);
+			if ((ret == 0) && (ptr != null)) {
+				buffer = Marshal.PtrToStringAnsi(new IntPtr(ptr));
 			} else {
 				buffer = null;
 			}
 			return ret;
 		}
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCDirectoryRead(IntPtr conn, IntPtr dir, ref IntPtr dirent);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCDirectoryRead(void* conn, void* dir, ref void* dirent);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCDirectoryClose(IntPtr conn, IntPtr dir);
-        
-        [DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCKeyValueRead(IntPtr dict, out IntPtr key, out IntPtr value);
-        [DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCKeyValueClose(IntPtr dict);
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AMRestoreRegisterForDeviceNotifications(
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCDirectoryClose(void* conn, void* dir);
+
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AMRestoreRegisterForDeviceNotifications(
 			DeviceRestoreNotificationCallback dfu_connect, 
 			DeviceRestoreNotificationCallback recovery_connect, 
 			DeviceRestoreNotificationCallback dfu_disconnect,
 			DeviceRestoreNotificationCallback recovery_disconnect,
 			uint unknown0,
-			IntPtr user_info);
+			void* user_info);
 
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AMDeviceStartService(void* device, void* service_name, ref void* handle, void* unknown);
 
-		public static int AMDeviceStartService(ref AMDevice device, string service_name, ref afc_connection conn, IntPtr unknown) {
-			IntPtr ptr;
-			int ret;
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCConnectionOpen(void* handle, uint io_timeout, ref void* conn);
 
-			ptr = IntPtr.Zero;
-			ret = AMDeviceStartService(ref device, StringToCFString(service_name), ref ptr, unknown);
-			if ((ret == 0) && (ptr != IntPtr.Zero)) {
-				conn = (afc_connection)Marshal.PtrToStructure(ptr, conn.GetType());
-			}
-			return ret;
-		}
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AMDeviceStartService(ref AMDevice device, byte[] service_name, ref IntPtr handle, IntPtr unknown);
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AFCConnectionIsValid(void* conn);
 
-		public static int AFCConnectionOpen(IntPtr handle, uint io_timeout, ref afc_connection conn) {
-			IntPtr ptr;
-			int ret;
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AFCConnectionInvalidate(void* conn);
 
-			ptr = IntPtr.Zero;
-			ret = AFCConnectionOpen(handle, io_timeout, ref ptr);
-			if ((ret == 0) && (ptr != IntPtr.Zero)) {
-				conn = (afc_connection)Marshal.PtrToStructure(ptr, conn.GetType());
-			}
-			return ret;
-		}
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCConnectionOpen(IntPtr handle, uint io_timeout, ref IntPtr conn);
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AFCConnectionClose(void* conn);
 
-		public static string AMDeviceCopyValue(ref AMDevice device, uint unknown, string name) {
-			IntPtr	result;
-			byte[]	cfstring;
+		/*
+	Valid Value Names:
+			ActivationState
+			ActivationStateAcknowledged
+			BasebandBootloaderVersion
+			BasebandVersion
+			BluetoothAddress
+			BuildVersion
+			DeviceCertificate
+			DeviceClass
+			DeviceName
+			DevicePublicKey
+			FirmwareVersion
+			HostAttached
+			IntegratedCircuitCardIdentity
+			InternationalMobileEquipmentIdentity
+			InternationalMobileSubscriberIdentity
+			ModelNumber
+			PhoneNumber
+			ProductType
+			ProductVersion
+			ProtocolVersion
+			RegionInfo
+			SBLockdownEverRegisteredKey
+			SIMStatus
+			SerialNumber
+			SomebodySetTimeZone
+			TimeIntervalSince1970
+			TimeZone
+			TimeZoneOffsetFromUTC
+			TrustedHostAttached
+			UniqueDeviceID
+			Uses24HourClock
+			WiFiAddress
+			iTunesHasConnected
+ */
 
-			cfstring = StringToCFString(name);
-
-			result = AMDeviceCopyValue_Int(ref device, unknown, cfstring);
+		unsafe public static string AMDeviceCopyValue(void* device, string name) {
+			IntPtr result = AMDeviceCopyValue_IntPtr(device, 0, CFStringMakeConstantString(name));
 			if (result != IntPtr.Zero) {
-				byte length;
-
-				length = Marshal.ReadByte(result, 8);
+				byte length = Marshal.ReadByte(result, 8);
 				if (length > 0) {
 					return Marshal.PtrToStringAnsi(new IntPtr(result.ToInt64() + 9), length);
-				} else {
-					return String.Empty;
 				}
 			}
 			return String.Empty;
 		}
 
-		[DllImport("iTunesMobileDevice.dll", EntryPoint="AMDeviceCopyValue", CallingConvention=CallingConvention.Cdecl)]
-		public extern static IntPtr AMDeviceCopyValue_Int(ref AMDevice device, uint unknown, byte[] cfstring);
+		[DllImport(DLLName, EntryPoint="AMDeviceCopyValue", CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static IntPtr AMDeviceCopyValue_IntPtr(void* device, uint unknown, void* cfstring);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCGetFileInfo(IntPtr conn, string path, ref IntPtr buffer, out uint length);
+        [DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+        unsafe public extern static int AFCFileInfoOpen(void* conn, string path, ref void* dict);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCRemovePath(IntPtr conn, string path);
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AFCKeyValueRead(void* dict, out void* key, out void* val);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCRenamePath(IntPtr conn, string old_path, string new_path);
+		[DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AFCKeyValueClose(void* dict);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCFileRefOpen(IntPtr conn, string path, int mode, int unknown, out Int64 handle);
+        [DllImport(DLLName, CallingConvention = CallingConvention.Cdecl)]
+		unsafe public extern static int AFCRemovePath(void* conn, string path);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCFileRefClose(IntPtr conn, Int64 handle);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCRenamePath(void* conn, string old_path, string new_path);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCFileRefRead(IntPtr conn, Int64 handle, byte[] buffer, ref uint len);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCFileRefOpen(void* conn, string path, int mode, int unknown, out Int64 handle);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCFileRefWrite(IntPtr conn, Int64 handle, byte[] buffer, uint len);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCFileRefClose(void* conn, Int64 handle);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCFlushData(IntPtr conn, Int64 handle);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCFileRefRead(void* conn, Int64 handle, byte[] buffer, ref uint len);
+
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCFileRefWrite(void* conn, Int64 handle, byte[] buffer, uint len);
+
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCFlushData(void* conn, Int64 handle);
 
 		// FIXME - not working, arguments? Always returns 7
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCFileRefSeek(IntPtr conn, Int64 handle, uint pos, uint origin);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCFileRefSeek(void* conn, Int64 handle, uint pos, uint origin);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCFileRefTell(IntPtr conn, Int64 handle, ref uint position);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCFileRefTell(void* conn, Int64 handle, ref uint position);
 
 		// FIXME - not working, arguments?
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCFileRefSetFileSize(IntPtr conn, Int64 handle, uint size);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCFileRefSetFileSize(void* conn, Int64 handle, uint size);
 
-		[DllImport("iTunesMobileDevice.dll", CallingConvention=CallingConvention.Cdecl)]
-		public extern static int AFCDirectoryCreate(IntPtr conn, string path);
+		[DllImport(DLLName, CallingConvention=CallingConvention.Cdecl)]
+		unsafe public extern static int AFCDirectoryCreate(void* conn, string path);
 
 
-		internal static byte[] StringToCFString(string value) {
+		public static byte[] StringToCFString(string value) {
 			byte[] b;
 
 			b = new byte[value.Length + 10];
@@ -339,7 +386,13 @@ namespace Manzana
 			return b;
 		}
 
-		internal static string CFStringToString(byte[] value) {
+		public static byte[] StringToCString(string value) {
+			byte[] bytes = new byte[value.Length + 1];
+			Encoding.ASCII.GetBytes(value, 0, value.Length, bytes, 0);
+			return bytes;
+		}
+
+		public static string CFStringToString(byte[] value) {
 			return Encoding.ASCII.GetString(value, 9, value[9]);
 		}
 	}

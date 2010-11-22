@@ -1,21 +1,21 @@
 /*--------------------------------------------------------------------*\
- * This source file is subject to the new BSD license that is bundled *
- * with this package in the file LICENSE.txt.                         *
+ * This source file is subject to the GPLv3 license that is bundled   *
+ * with this package in the file COPYING.                             *
  * It is also available through the world-wide-web at this URL:       *
- * http://www.lokkju.com/license/gnu2                                 *
+ * http://www.gnu.org/licenses/gpl-3.0.txt                            *
  * If you did not receive a copy of the license and are unable to     *
  * obtain it through the world-wide-web, please send an email         *
  * to bsd-license@lokkju.com so we can send you a copy immediately.   *
  *                                                                    *
  * @category   iPhone                                                 *
- * @package    iPhone Music Manager                                   *
+ * @package    iPhone File System for Windows                         *
  * @copyright  Copyright (c) 2007 Lokkju Inc. (http://www.lokkju.com) *
- * @license    http://www.lokkju.com/license/gnu2 GNU v2 License      *
+ * @license    http://www.gnu.org/licenses/gpl-3.0.txt GNU v3 Licence *
  *                                                                    *
- * $Revision:: 12                      $:  Revision of last commit    *
- * $Author:: lokkju                    $:  Author of last commit      *
- * $Date:: 2007-08-24 11:14:31 -0700 (#$:  Date of last commit        *
- * $Id:: Program.cs 12 2007-08-24 18:14:31Z lokkju                  $ *
+ * $Revision::                            $:  Revision of last commit *
+ * $Author::                              $:  Author of last commit   *
+ * $Date::                                $:  Date of last commit     *
+ * $Id::                                                            $ *
 \*--------------------------------------------------------------------*/
 using System;
 using System.Collections.Generic;

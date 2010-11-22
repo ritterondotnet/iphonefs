@@ -1,5 +1,28 @@
+/*--------------------------------------------------------------------*\
+ * This source file is subject to the GPLv3 license that is bundled   *
+ * with this package in the file COPYING.                             *
+ * It is also available through the world-wide-web at this URL:       *
+ * http://www.gnu.org/licenses/gpl-3.0.txt                            *
+ * If you did not receive a copy of the license and are unable to     *
+ * obtain it through the world-wide-web, please send an email         *
+ * to bsd-license@lokkju.com so we can send you a copy immediately.   *
+ *                                                                    *
+ * @category   iPhone                                                 *
+ * @package    iPhone File System for Windows                         *
+ * @copyright  Copyright (c) 2010 Lokkju Inc. (http://www.lokkju.com) *
+ * @license    http://www.gnu.org/licenses/gpl-3.0.txt GNU v3 Licence *
+ *                                                                    *
+ * $Revision::                            $:  Revision of last commit *
+ * $Author::                              $:  Author of last commit   *
+ * $Date::                                $:  Date of last commit     *
+ * $Id::                                                            $ *
+\*--------------------------------------------------------------------*/
+/*
+ * This file is based on work under the following copyright and permission
+ * notice:
 // Software License Agreement (BSD License)
 // 
+// Copyright (c) 2010, Lokkju Inc. <lokkju@lokkju.com>
 // Copyright (c) 2007, Peter Dennis Bartok <PeterDennisBartok@gmail.com>
 // All rights reserved.
 // 
@@ -29,24 +52,21 @@
 // TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-
+*/
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Manzana
-{
+namespace Manzana {
 	/// <summary>
 	/// Exposes a stream to a file on an iPhone, supporting both synchronous and asynchronous read and write operations
 	/// </summary>
-    public class iPhoneFile : Stream {
-        public static int handles = 0;
-        private enum OpenMode
-        {
+	public class iPhoneFile : Stream {
+		private enum OpenMode {
 			None = 0,
 			Read = 2,
-			Write = 3,
+			Write = 3
 		}
 
 		#region Fields
@@ -70,10 +90,7 @@ namespace Manzana
 		/// </summary>
 		public override bool CanRead {
 			get { 
-				if (mode == OpenMode.Read) {
-					return true;
-				}
-				return false;
+				return (mode == OpenMode.Read);
 			}
 		}
 
@@ -98,10 +115,7 @@ namespace Manzana
 		/// </summary>
 		public override bool CanWrite {
 			get {
-				if (mode == OpenMode.Write) {
-					return true;
-				}
-				return false;
+                return (mode == OpenMode.Write);
 			}
 		}
 
@@ -115,7 +129,7 @@ namespace Manzana
 		/// <summary>
 		/// Gets or sets the position within the current stream
 		/// </summary>
-		public override long Position {
+		unsafe public override long Position {
 			get {
 				uint ret;
 				ret = 0;
@@ -132,7 +146,7 @@ namespace Manzana
 		/// Sets the length of this stream to the given value. 
 		/// </summary>
 		/// <param name="value">The new length of the stream.</param>
-		public override void SetLength(long value) {
+		unsafe public override void SetLength(long value) {
 			int ret;
 
 			ret = MobileDevice.AFCFileRefSetFileSize(phone.AFCHandle, handle, (uint)value);
@@ -144,11 +158,10 @@ namespace Manzana
 		/// Releases the unmanaged resources used by iPhoneFile
 		/// </summary>
 		/// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
-		protected override void Dispose(bool disposing) {
+		unsafe protected override void Dispose(bool disposing) {
 			if (disposing) {
 				if (handle != 0) {
-                    handles++;
-                    MobileDevice.AFCFileRefClose(phone.AFCHandle, handle);
+					MobileDevice.AFCFileRefClose(phone.AFCHandle, handle);
 					handle = 0;
 				}
 			}
@@ -162,28 +175,25 @@ namespace Manzana
 		/// <param name="offset">The zero-based byte offset in buffer at which to begin storing the data read from the current stream.</param>
 		/// <param name="count">The maximum number of bytes to be read from the current stream.</param>
 		/// <returns>The total number of bytes read into the buffer. This can be less than the number of bytes requested if that many bytes are not currently available, or zero (0) if the end of the stream has been reached.</returns>
-		public override int Read(byte[] buffer, int offset, int count) {
-			uint	len;
-			int		ret;
-			byte[]	temp;
-
-			if (mode != OpenMode.Read) {
+		unsafe public override int Read(byte[] buffer, int offset, int count) {
+			if (!CanRead)
 				throw new NotImplementedException("Stream open for writing only");
-			}
 
-			if (offset == 0) {
+            byte[] temp;
+
+            if (offset == 0)
 				temp = buffer;
-			} else {
+			else
 				temp = new byte[count];
-			}
-			len = (uint)count;
-			ret = MobileDevice.AFCFileRefRead(phone.AFCHandle, handle, temp, ref len);
-			if (ret != 0) {
+
+			uint len = (uint)count;
+			int ret = MobileDevice.AFCFileRefRead(phone.AFCHandle, handle, temp, ref len);
+			if (ret != 0)
 				throw new IOException("AFCFileRefRead error = " + ret.ToString());
-			}
-			if (temp != buffer) {
+
+			if (temp != buffer)
 				Buffer.BlockCopy(temp, 0, buffer, offset, (int)len);
-			}
+
 			return (int)len;
 		}
 
@@ -193,23 +203,20 @@ namespace Manzana
 		/// <param name="buffer">An array of bytes. This method copies count bytes from buffer to the current stream.</param>
 		/// <param name="offset">The zero-based byte offset in buffer at which to begin copying bytes to the current stream.</param>
 		/// <param name="count">The number of bytes to be written to the current stream.</param>
-		public override void Write(byte[] buffer, int offset, int count) {
-			int		ret;
-			uint	len;
-			byte[] temp;
-
-			if (mode != OpenMode.Write) {
+		unsafe public override void Write(byte[] buffer, int offset, int count) {
+			if (!CanWrite)
 				throw new NotImplementedException("Stream open for reading only");
-			}
 
-			if (offset == 0) {
+            byte[] temp;
+
+            if (offset == 0)
 				temp = buffer;
-			} else {
+            else {
 				temp = new byte[count];
 				Buffer.BlockCopy(buffer, offset, temp, 0, count);
 			}
-			len = (uint)count;
-			ret = MobileDevice.AFCFileRefWrite(phone.AFCHandle, handle, temp, len);
+
+			int ret = MobileDevice.AFCFileRefWrite(phone.AFCHandle, handle, temp, (uint)count);
 		}
 
 		/// <summary>
@@ -218,7 +225,7 @@ namespace Manzana
 		/// <param name="offset">A byte offset relative to the <c>origin</c> parameter</param>
 		/// <param name="origin">A value of type <see cref="SeekOrigin"/> indicating the reference point used to obtain the new position</param>
 		/// <returns>The new position within the stream</returns>
-		public override long Seek(long offset, SeekOrigin origin) {
+		unsafe public override long Seek(long offset, SeekOrigin origin) {
 			int ret;
 
 			ret = MobileDevice.AFCFileRefSeek(phone.AFCHandle, handle, (uint)offset, 0);
@@ -229,7 +236,7 @@ namespace Manzana
 		/// <summary>
 		/// Clears all buffers for this stream and causes any buffered data to be written to the underlying device. 
 		/// </summary>
-		public override void Flush() {
+		unsafe public override void Flush() {
 			MobileDevice.AFCFlushData(phone.AFCHandle, handle);
 		}
 		#endregion	// Public Methods
@@ -242,8 +249,7 @@ namespace Manzana
 		/// <param name="path">The file to open</param>
 		/// <param name="openmode">A <see cref="FileAccess"/> value that specifies the operations that can be performed on the file</param>
 		/// <returns></returns>
-		public static iPhoneFile Open(iPhone phone, string path, FileAccess openmode) {
-            CleanPath(ref path);
+		unsafe public static iPhoneFile Open(iPhone phone, string path, FileAccess openmode) {
 			OpenMode	mode;
 			int			ret;
 			long		handle;
@@ -256,13 +262,13 @@ namespace Manzana
 				case FileAccess.ReadWrite: throw new NotImplementedException("Read+Write not (yet) implemented");
 			}
 
-			full_path = phone.FullPath(phone.GetCurrentDirectory(), path);
+			full_path = phone.FullPath(phone.CurrentDirectory, path);
 			ret = MobileDevice.AFCFileRefOpen(phone.AFCHandle, full_path, (int)mode, 0, out handle);
-            handles++;
-            if (ret != 0)
-            {
-				throw new IOException("AFCFileRefOpen failed with error " + ret.ToString() + " - This error is commonly caused by copying to many files at once.  Too many file refs open? (" + handles + ")");
+			if (ret != 0) {
+				phone.ReConnect();
+				throw new IOException("AFCFileRefOpen failed with error " + ret.ToString());
 			}
+
 			return new iPhoneFile(phone, handle, mode);
 		}
 
@@ -273,7 +279,6 @@ namespace Manzana
 		/// <param name="path">The file to be opened for reading</param>
 		/// <returns>An unshared <c>iPhoneFile</c> object on the specified path with Write access. </returns>
 		public static iPhoneFile OpenRead(iPhone phone, string path) {
-            CleanPath(ref path);
 			return iPhoneFile.Open(phone, path, FileAccess.Read);
 		}
 
@@ -284,17 +289,8 @@ namespace Manzana
 		/// <param name="path">The file to be opened for writing</param>
 		/// <returns>An unshared <c>iPhoneFile</c> object on the specified path with Write access. </returns>
 		public static iPhoneFile OpenWrite(iPhone phone, string path) {
-            CleanPath(ref path);
 			return iPhoneFile.Open(phone, path, FileAccess.Write);
 		}
-        internal static void CleanPath(ref string path)
-        {
-            path = path.Replace(@"\", "/").Replace("//", "/");
-            if ((path == null) || (path == String.Empty))
-            {
-                path = "/";
-            }
-        }
 		#endregion	// Static Methods
 	}
 }
