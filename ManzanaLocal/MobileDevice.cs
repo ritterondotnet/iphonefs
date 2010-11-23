@@ -196,18 +196,54 @@ namespace Manzana {
 
 	internal class MobileDevice {
         const string DLLName = "iTunesMobileDevice.dll";
-		//static readonly FileInfo iTunesMobileDeviceFile = new FileInfo(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Apple Inc.\Apple Mobile Device Support\Shared", "iTunesMobileDeviceDLL", DLLName).ToString());
-		//static readonly DirectoryInfo ApplicationSupportDirectory = new DirectoryInfo(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Apple Inc.\Apple Application Support", "InstallDir", Environment.CurrentDirectory).ToString());
-
+        static readonly FileInfo iTunesMobileDeviceFile;
+        static readonly FileInfo InstallDir;
+        static readonly String[] ITUNESMOBILEDEVICEDLL_REGISTRY_LOCATIONS = {
+            @"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Apple Inc.\Apple Mobile Device Support\Shared",
+            @"HKEY_LOCAL_MACHINE\SOFTWARE\Apple Inc.\Apple Mobile Device Support\Shared"
+        };
+        static readonly String[] INSTALLDIR_REGISTRY_LOCATIONS = {
+            @"HKLM\SOFTWARE\Apple Inc.\Apple Application Support",
+            @"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Apple Inc.\Apple Application Support"
+        };
+            
         static MobileDevice() {
-            // try to find the dll automatically
-            string addpath;// = iTunesMobileDeviceFile.DirectoryName;
-            //if (!iTunesMobileDeviceFile.Exists) {
-                addpath = Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles) + @"\Apple\Mobile Device Support\bin";
-				if (!File.Exists(addpath + @"\" + DLLName))
-					addpath = @"C:\Program Files\Apple\Mobile Device Support\bin";
-			//}
-            Environment.SetEnvironmentVariable("Path", string.Join(";", new String[] { Environment.GetEnvironmentVariable("Path"), addpath/*, ApplicationSupportDirectory.FullName */}));
+            if (File.Exists(DLLName))
+            {
+                iTunesMobileDeviceFile = new FileInfo(DLLName);
+            }
+            else
+            {
+                foreach (String k in ITUNESMOBILEDEVICEDLL_REGISTRY_LOCATIONS)
+                {
+                    try
+                    {
+                        iTunesMobileDeviceFile = new FileInfo(Registry.GetValue(k, "iTunesMobileDeviceDLL", null).ToString());
+                        break;
+                    }
+                    catch { }
+                }
+            }
+            foreach (String k in INSTALLDIR_REGISTRY_LOCATIONS)
+            {
+                try
+                {
+                    InstallDir = new FileInfo(Registry.GetValue(k, "InstallDir", null).ToString());
+                    break;
+                }
+                catch { }
+            }
+
+            if (iTunesMobileDeviceFile == null)
+            {
+                throw new Exception("iTunesMobileDevice.dll could not be found.  Please make sure you have iTunes installed.");
+            }
+            if (InstallDir == null)
+            {
+                throw new Exception("The Apple Application Support install directory could not be found.  Please make sure you have iTunes installed.");
+            }
+            Environment.SetEnvironmentVariable("Path", string.Join(";", new String[] { Environment.GetEnvironmentVariable("Path"), iTunesMobileDeviceFile.DirectoryName, InstallDir.FullName }));
+
         }
 
 		[DllImport("CoreFoundation.dll", CallingConvention = CallingConvention.Cdecl)]

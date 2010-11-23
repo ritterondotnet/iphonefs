@@ -39,8 +39,6 @@
 
 //#define SERVICE
 
-//Define this constant to test without having a iPhone
-//#define Test_without_iPhone
 
 using System;
 using System.Collections;
@@ -212,12 +210,7 @@ namespace com.lokkju.iphonefs
             this.Show();
             Application.DoEvents();
 
-#if (!Test_without_iPhone)
             StartServer();
-#else
-            startCIFSServer();
-#endif
-
         }
 
         public void SetText(string Text)
@@ -369,47 +362,7 @@ namespace com.lokkju.iphonefs
             this.Close();
         }
 #endif
-        static bool ensureDllExists(string filename)
-        {
-#if (Test_without_iPhone)
-            return true;
-#endif
-            if (File.Exists(filename))
-            {
-                return true;
-            }
-            else
-            {
-                DialogResult res = MessageBox.Show("You are missing iTunesMobileDevice.dll!\nDo you want to locate a copy?", "Fatal Error!", MessageBoxButtons.YesNo, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
-                if (res == DialogResult.No)
-                {
-                    System.Environment.Exit(0);
-                }
-                else
-                {
-                    OpenFileDialog fd = new OpenFileDialog();
-                    fd.CheckFileExists = true;
-                    fd.FileName = filename;
-                    fd.Filter = filename + "|" + filename;
-                    fd.InitialDirectory = System.Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles) + @"\Apple\Mobile Device Support\bin\";
-                    fd.Title = "Select a " + filename + " File";
-                    res = fd.ShowDialog();
-                    if (res == DialogResult.OK)
-                    {
-                        try
-                        {
-                            if (Path.GetFileName(fd.FileName) == filename)
-                            {
-                                File.Copy(fd.FileName, Path.GetDirectoryName(Application.ExecutablePath) + @"\" + filename);
-                                return true;
-                            }
-                        }
-                        catch { }
-                    }
-                }
-                return false;
-            }
-        }
+
         
         SMB CIFS = null;
 
@@ -491,7 +444,11 @@ namespace com.lokkju.iphonefs
 
         public void StopServer()
         {
-	       	CIFS.Stop(false, 1000);
+            if (CIFS != null)
+            {
+                CIFS.Stop(false, 1000);
+                CIFS = null;
+            }
             unmapDrive();
             Trace.WriteLine("-------------- End of Trace --------------");
 			Trace.Flush();

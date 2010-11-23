@@ -106,7 +106,7 @@ namespace iPhoneDriveControl
             int dwFlags = 0;
             int ret = WNetCancelConnection2(driveletter, dwFlags,true);
             if (ret != 0)
-                throw new IOException("An error occured mapping the resource.  The error code is: " + ret);
+                throw new IOException("An error occured unmapping the resource.  The error code is: " + ret);
             return ret;
         }
     }
